@@ -1,0 +1,10 @@
+[run]
+
+omit =
+  tests/*
+
+concurrency = multiprocessing
+
+[report]
+exclude_lines =
+  pragma: no cover
