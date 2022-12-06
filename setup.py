@@ -9,18 +9,15 @@ setup(
         "ascii_art_app",
         "ascii_art_app.core",
     ],
-    install_requires=[
-        "numpy==1.19.4", 
-        "opencv-python-headless==" # TODO package version number + test
-    ],
+    install_requires=["numpy==1.19.4", "opencv-python-headless==4.6.0.66"],  # TODO test
     extras_require={
         "dev": [
-            "pre-commit==2.15.0",
+            "pre-commit==2.20.0",
             "pytest==6.2.5",
             "pytest-cov==3.0.0",
             "pytest-env==0.6.2",
-            "black==19.3b0",
-            "flake8==3.7.8",
+            "black==22.10.0",
+            "flake8==6.0.0",
             "coverage==6.1.1",
         ]
     },

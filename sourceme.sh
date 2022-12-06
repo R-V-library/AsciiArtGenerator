@@ -41,7 +41,7 @@ if [ "$stop" = "0" ] ; then
       create_venv=1;
    fi
 
-   # Setup environment variables 
+   # Setup environment variables
    # -------------------------------------------------------------------
    echo "########## SETUP ASCII ART GENERATOR ##########"
    # Extracting the project name from the repo name and converting it to uppercase
@@ -56,7 +56,7 @@ if [ "$stop" = "0" ] ; then
    if [ "$create_venv" = "1" ] ; then
       echo "   -- creating Python virtualenv"
       rm -rf venv
-      python3.8 -m virtualenv venv
+      python3 -m virtualenv venv
    fi
 
    source venv/bin/activate
