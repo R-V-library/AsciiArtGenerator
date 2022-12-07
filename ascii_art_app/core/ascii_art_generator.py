@@ -3,14 +3,23 @@ import cv2 as cv
 import os
 import sys
 import errno
-
-# import logging
+import logging
 
 
 class AsciiArtGenerator:
     def __init__(self):
         self.image = None
         self.grey = None
+
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s : %(levelname)s : %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        self.logger = logging.getLogger()
+
+    def enable_logging(self):
+        self.logger.setLevel(level=logging.DEBUG)
 
     def load_image(self, filepath):
         try:
@@ -19,8 +28,11 @@ class AsciiArtGenerator:
                 self.grey = cv.imread(filepath, cv.COLOR_BGR2GRAY)
 
                 if (self.image is None) or (self.grey is None):
+                    self.logger.debug("Error loading file")
                     raise TypeError("Filetype not supported")
+
             else:
+                self.logger.debug("Error opening file")
                 raise FileNotFoundError(
                     errno.ENOENT, os.strerror(errno.ENOENT), filepath
                 )
@@ -29,19 +41,17 @@ class AsciiArtGenerator:
                 sys.exit(1)
             else:
                 raise
+        self.logger.debug("Done loading image files")
 
     def trim_whitespace(self):
-        # self.imageToGrey()
         canny = self.extract_edges()  # extract edges from greyscale image
-
-        # grey = 255*(grey < 128).astype(np.uint8) # To invert the text to white
 
         coords = cv.findNonZero(canny)  # Find all non-zero points
         x, y, w, h = cv.boundingRect(coords)  # Find minimum spanning bounding box
 
         self.image = self.image[y : y + h, x : x + w]  # Crop the original image
         self.grey = self.grey[y : y + h, x : x + w]  # crop the grey image
-        # return image
+        self.logger.debug("Done trimming whitespace")
 
     def resize_image(self, max_height, max_width):
         # calculate scaling depending on max amount of characters in one direction
@@ -52,10 +62,8 @@ class AsciiArtGenerator:
             scaling_factor = max_height / original_height
         else:
             scaling_factor = max_width / original_width
-        print(scaling_factor)
-        # print(img.shape[0], img.shape[1])
 
-        # print(height,width)
+        self.logger.debug(f"Scaling image with scaling factor: {scaling_factor}")
 
         # scale image
         self.image = cv.resize(
@@ -72,22 +80,17 @@ class AsciiArtGenerator:
             fy=scaling_factor,
             interpolation=cv.INTER_AREA,
         )
-        # return image
-
-    # def imageToGrey(self):
-    # self.grey = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
-    # self.grey = grey
-    # return grey
+        self.logger.debug("Done resizing image")
 
     def extract_edges(self):
         median_greyscale = np.median(np.flatten(self.grey))
         lower_boundary = int(0.66 * median_greyscale)
         upper_boundary = int(1.33 * median_greyscale)
         canny = cv.Canny(self.grey, lower_boundary, upper_boundary)
+        self.logger.debug("Done extracting edges")
         return canny
 
     def generate_output(self, filename, style):
-
         try:
             with open(filename, "w") as outfile:
                 # regular output (greyscale)
@@ -127,7 +130,8 @@ class AsciiArtGenerator:
             else:
                 raise
 
-    # DUMMIES
+        self.logger.debug("Done generating output")
+
     # TODO: code real functions
     def gen_regular_output(self, outfile):
         ASCII_ARRAY = (
@@ -148,7 +152,6 @@ class AsciiArtGenerator:
                 outfile.write(ascii_char)
             outfile.write("\n")
         outfile.close()
-        print("done writing file")  # TODO: logging instead of print
 
     def gen_lines_output(self, outfile):
         return 0

@@ -17,43 +17,65 @@ class App:
 
     def build_argparse(self):
         self.parser = argparse.ArgumentParser(
-            prog = "ASCII ART GENERATOR",
-            description = "Ascii art generator options"
+            prog="ASCII ART GENERATOR", description="Ascii art generator options"
+        )
+
+        self.parser.add_argument("filename", metavar="string")
+
+        self.parser.add_argument(
+            "-b",
+            "--background-color",
+            action="store_true",
+            default="black",
+            choices=["black", "white"],
+            help="Set background color",
         )
 
         self.parser.add_argument(
-            'filename',
-            metavar="string"
+            "-d", "--debug", action="store_true", default=False, help="Show debug logs"
         )
 
         self.parser.add_argument(
-            "-b", "--background-color", action="store_true", default="black",
-            choices = ["black", "white"],
-            help = "Set background color"
-        )   
-
-        self.parser.add_argument(
-            "-d", "--debug", action="store_true", default=False,
-            help = "Show debug logs"
+            "-l",
+            "--max-lines",
+            action="store_true",
+            type=int,
+            default="200",
+            help="Set max amount of lines",
         )
 
         self.parser.add_argument(
-            "-l", "--max-lines", action="store_true", type = int, default="200",
-            help = "Set max amount of lines"
+            "-o",
+            "--output-dir",
+            action="store_true",
+            type=str,
+            default="./output.txt",
+            help="Set output file name and directory",
         )
 
         self.parser.add_argument(
-            "-o", "--output-dir", action="store_true", type = str,  default = "./output.txt", help = "Set output file name and directory"
+            "-s",
+            "--style",
+            action="store_true",
+            default="regular",
+            choices=[
+                "regular",
+                "lines",
+                "regular_coloured",
+                "regular_unicolour",
+                "lines_unicolour",
+                "rubik",
+                "rubik_background",
+            ],
+            help="Choose output style",
         )
 
-        self.parser.add_argument( 
-            "-s", "--style", action="store_true", default="regular", 
-            choices=["regular", "lines", "regular_coloured", "regular_unicolour", "lines_unicolour", "rubik", "rubik_background"],
-            help = "Choose output style"
-        )
-        
         self.parser.add_argument(
-            "-t", "--trim-whitespace", action="store_true", default = False, help = "Trim image whitespace before converting to ascii art"
+            "-t",
+            "--trim-whitespace",
+            action="store_true",
+            default=False,
+            help="Trim image whitespace before converting to ascii art",
         )
 
         self.parser.add_argument(
@@ -61,8 +83,12 @@ class App:
         )
 
         self.parser.add_argument(
-            "-w", "--max-characters", action="store_true", type = int, default="200",
-            help = "Set max amount of characters per line"
+            "-w",
+            "--max-characters",
+            action="store_true",
+            type=int,
+            default="200",
+            help="Set max amount of characters per line",
         )
 
     def run(self, argv):
@@ -77,16 +103,20 @@ class App:
     # TODO: define statemachine depending on arguments from parser
     def do_run(self, args):
         generator = AsciiArtGenerator()
+
+        if args.d:
+            generator.enable_logging()
+
         generator.load_image(args.filename)
 
         if args.t:
             generator.trim_whitespace()
-        
+
         generator.resize_image(args.h, args.w)
 
-        if ((args.s == "lines") or (args.s == "lines_unicolour")): # TODO: other styles that benefit from edges only?
+        if (args.s == "lines") or (
+            args.s == "lines_unicolour"
+        ):  # TODO: other styles that benefit from edges only?
             generator.extract_edges()
 
         generator.generate_output(args.o, args.s, args.b)
-        
-        
