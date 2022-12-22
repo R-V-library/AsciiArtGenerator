@@ -20,15 +20,24 @@ class App:
             prog="ASCII ART GENERATOR", description="Ascii art generator options"
         )
 
-        self.parser.add_argument("filename", metavar="string")
+        self.parser.add_argument("filename", metavar="filename")
 
         self.parser.add_argument(
-            "-b",
-            "--background-color",
-            action="store_true",
-            default="black",
-            choices=["black", "white"],
-            help="Set background color",
+            "-c",
+            "--colour",
+            # action="store_true",
+            default="",
+            choices=[
+                "black",
+                "red",
+                "green",
+                "yellow",
+                "blue",
+                "magenta",
+                "cyan",
+                "white",
+            ],
+            help="Select output colour",
         )
 
         self.parser.add_argument(
@@ -38,7 +47,7 @@ class App:
         self.parser.add_argument(
             "-l",
             "--max-lines",
-            action="store_true",
+            # action="store_true",
             type=int,
             default="200",
             help="Set max amount of lines",
@@ -47,7 +56,7 @@ class App:
         self.parser.add_argument(
             "-o",
             "--output-dir",
-            action="store_true",
+            # action="store_true",
             type=str,
             default="./output.txt",
             help="Set output file name and directory",
@@ -56,7 +65,7 @@ class App:
         self.parser.add_argument(
             "-s",
             "--style",
-            action="store_true",
+            # action="store_true",
             default="regular",
             choices=[
                 "regular",
@@ -85,7 +94,7 @@ class App:
         self.parser.add_argument(
             "-w",
             "--max-characters",
-            action="store_true",
+            # action="store_true",
             type=int,
             default="200",
             help="Set max amount of characters per line",
@@ -104,19 +113,14 @@ class App:
     def do_run(self, args):
         generator = AsciiArtGenerator()
 
-        if args.d:
+        if args.debug:
             generator.enable_logging()
 
         generator.load_image(args.filename)
 
-        if args.t:
+        if args.trim_whitespace:
             generator.trim_whitespace()
 
-        generator.resize_image(args.h, args.w)
+        generator.resize_image(args.max_lines, args.max_characters)
 
-        if (args.s == "lines") or (
-            args.s == "lines_unicolour"
-        ):  # TODO: other styles that benefit from edges only?
-            generator.extract_edges()
-
-        generator.generate_output(args.o, args.s, args.b)
+        generator.generate_output(args.output_dir, args.style, args.colour)

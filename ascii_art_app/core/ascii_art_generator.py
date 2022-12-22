@@ -55,7 +55,7 @@ class AsciiArtGenerator:
 
     def resize_image(self, max_height, max_width):
         # calculate scaling depending on max amount of characters in one direction
-        original_height, original_width = self.image.shape
+        original_height, original_width, _ = self.grey.shape
 
         # resize within max width/height
         if original_height > original_width:
@@ -90,29 +90,34 @@ class AsciiArtGenerator:
         self.logger.debug("Done extracting edges")
         return canny
 
-    def generate_output(self, filename, style):
+    def generate_output(self, filename, style, colour):
         try:
             with open(filename, "w") as outfile:
                 # regular output (greyscale)
                 if style == "regular":
-                    self.gen_regular_output(outfile)
+                    self.gen_regular_output(outfile, colour)
 
                 # only lines (edge detection)
                 elif style == "lines":
-                    self.gen_lines_output(outfile)
+                    self.extract_edges()
+                    self.gen_lines_output(outfile, colour)
 
                 # coloured regular "all" colours
                 elif style == "regular_coloured":
                     self.gen_regular_coloured_output(outfile)
 
+                # TODO: write function to output
                 # coloured regular 1 colour
                 elif style == "regular_unicolour":
                     self.gen_regular_uni_coloured_output(outfile)
 
+                # TODO: remove
                 # coloured edges 1 colour
                 elif style == "lines_unicolour":
+                    self.extract_edges()
                     self.gen_lines_uni_coloured_output(outfile)
 
+                # TODO: write function for rubik style output
                 # rubik's cube ascii coloured
                 elif style == "rubik":
                     self.gen_rubik_output(outfile)
@@ -133,37 +138,91 @@ class AsciiArtGenerator:
         self.logger.debug("Done generating output")
 
     # TODO: code real functions
-    def gen_regular_output(self, outfile):
+    # TODO: code generic reusable function
+    def gen_regular_output(self, outfile, colour=None):
         ASCII_ARRAY = (
             "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,^`'."
         )
+        ASCII_RESOLUTION = round(256 / len(ASCII_ARRAY))
 
-        ascii_resolution = round(256 / len(ASCII_ARRAY))
+        colour_prefix = ""
+        if colour:
+            if colour == "black":
+                colour_prefix = "\x1b[30m"
+
+            elif colour == "red":
+                colour_prefix = "\x1b[31m"
+
+            elif colour == "green":
+                colour_prefix = "\x1b[32m"
+
+            elif colour == "yellow":
+                colour_prefix = "\x1b[33m"
+
+            elif colour == "blue":
+                colour_prefix = "\x1b[34m"
+
+            elif colour == "magenta":
+                colour_prefix = "\x1b[35m"
+
+            elif colour == "cyan":
+                colour_prefix = "\x1b[36m"
+
+            elif colour == "white":
+                colour_prefix = "\x1b[37m"
+
+            else:
+                self.logger.debug("Invalid colour argument")
+                raise NotImplementedError
+
+            outfile.write(colour_prefix)
 
         height = self.grey.shape[0]
         width = self.grey.shape[1]
         for i in range(height):
             for j in range(width):
-                greyvalue = self.grey[i, j]
-                if greyvalue < 128:  # split in middle of greyscale spectrum
-                    ascii_char = ASCII_ARRAY[(greyvalue // ascii_resolution)]
+                greyvalue = self.grey[i, j][0]
+                if (
+                    greyvalue < 128
+                ):  # split in middle of greyscale spectrum TODO: improve, use median?
+                    ascii_char = ASCII_ARRAY[(greyvalue // ASCII_RESOLUTION)]
                 else:
                     ascii_char = " "
                 outfile.write(ascii_char)
             outfile.write("\n")
+
+        if colour_prefix:
+            outfile.write("\x1b[0m")
+
         outfile.close()
 
-    def gen_lines_output(self, outfile):
-        return 0
-
-    def gen_regular_coloured_output(self, outfile):
-        return 0
-
-    def gen_lines_uni_coloured_output(self, outfile):
-        return 0
-
     def gen_rubik_output(self, outfile):
+
+        height = self.grey.shape[0]
+        width = self.grey.shape[1]
+
+        line_split, column_split = 0
+        for i in range(height):
+            for j in range(width):
+                pixvalue = self.image[i, j]
+                prefix = self.extract_rubik_colour(
+                    pixvalue
+                )  # TODO: extract colour from pixel
+                ascii_char = "8"
+                outfile.write(prefix + ascii_char + "\x1b[0m")
+                column_split += 1
+                if column_split % 3 == 0:
+                    outfile.write("|")
+                    column_split = 0
+            line_split += 1
+            if line_split % 3 == 0:
+                outfile.write("-" * width)
+                line_split = 0
+            outfile.write("\n")
+
+        outfile.close()
+
         return 0
 
-    def gen_rubik_background_output(self, outfile):
+    def extract_rubik_colour(self, colour):
         return 0
