@@ -24,7 +24,8 @@ class AsciiArtGenerator:
     def load_image(self, filepath):
         try:
             if os.path.isfile(filepath):
-                self.image = cv.imread(filepath)
+                self.image = cv.imread(filepath, cv.COLOR_BGR2HSV)
+                print(self.image.shape)
                 self.grey = cv.imread(filepath, cv.COLOR_BGR2GRAY)
 
                 if (self.image is None) or (self.grey is None):
@@ -55,13 +56,18 @@ class AsciiArtGenerator:
 
     def resize_image(self, max_height, max_width):
         # calculate scaling depending on max amount of characters in one direction
-        original_height, original_width, _ = self.grey.shape
+        # original_height, original_width, _ = self.grey.shape
 
+        print(max_height, max_width)
+        print(self.grey.shape[0], self.grey.shape[1])
         # resize within max width/height
-        if original_height > original_width:
-            scaling_factor = max_height / original_height
+        # if original_height > original_width:
+        if self.grey.shape[0] > self.grey.shape[1]:
+            scaling_factor = max_height / self.image.shape[0]
+            grey_scaling_factor = max_height / self.grey.shape[0]  # original_height
         else:
-            scaling_factor = max_width / original_width
+            scaling_factor = max_width / self.image.shape[1]
+            grey_scaling_factor = max_width / self.grey.shape[1]  # original_width
 
         self.logger.debug(f"Scaling image with scaling factor: {scaling_factor}")
 
@@ -73,21 +79,24 @@ class AsciiArtGenerator:
             fy=scaling_factor,
             interpolation=cv.INTER_AREA,
         )
+        print(scaling_factor, self.image.shape)
         self.grey = cv.resize(
             self.grey,
             None,
-            fx=scaling_factor,
-            fy=scaling_factor,
+            fx=grey_scaling_factor,
+            fy=grey_scaling_factor,
             interpolation=cv.INTER_AREA,
         )
         self.logger.debug("Done resizing image")
 
     def extract_edges(self):
-        median_greyscale = np.median(np.flatten(self.grey))
+        median_greyscale = np.median(np.ndarray.flatten(self.grey))
         lower_boundary = int(0.66 * median_greyscale)
         upper_boundary = int(1.33 * median_greyscale)
         canny = cv.Canny(self.grey, lower_boundary, upper_boundary)
         self.logger.debug("Done extracting edges")
+        # print(canny)
+        # self.grey = canny
         return canny
 
     def generate_output(self, filename, style, colour):
@@ -99,7 +108,6 @@ class AsciiArtGenerator:
 
                 # only lines (edge detection)
                 elif style == "lines":
-                    self.extract_edges()
                     self.gen_lines_output(outfile, colour)
 
                 # coloured regular "all" colours
@@ -139,12 +147,8 @@ class AsciiArtGenerator:
 
     # TODO: code real functions
     # TODO: code generic reusable function
-    def gen_regular_output(self, outfile, colour=None):
-        ASCII_ARRAY = (
-            "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,^`'."
-        )
-        ASCII_RESOLUTION = round(256 / len(ASCII_ARRAY))
 
+    def get_colour_prefix(self, colour):
         colour_prefix = ""
         if colour:
             if colour == "black":
@@ -175,15 +179,22 @@ class AsciiArtGenerator:
                 self.logger.debug("Invalid colour argument")
                 raise NotImplementedError
 
-            outfile.write(colour_prefix)
+            return colour_prefix
 
-        height = self.grey.shape[0]
-        width = self.grey.shape[1]
-        for i in range(height):
-            for j in range(width):
+    def gen_regular_output(self, outfile, colour=None):
+        ASCII_ARRAY = (
+            "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,^`'."
+        )
+        ASCII_RESOLUTION = round(256 / len(ASCII_ARRAY))
+
+        if colour:
+            outfile.write(self.get_colour_prefix(colour))
+
+        for i in range(self.grey.shape[0]):
+            for j in range(self.grey.shape[1]):
                 greyvalue = self.grey[i, j][0]
                 if (
-                    greyvalue < 128
+                    greyvalue < 128  # self.median_greyscale
                 ):  # split in middle of greyscale spectrum TODO: improve, use median?
                     ascii_char = ASCII_ARRAY[(greyvalue // ASCII_RESOLUTION)]
                 else:
@@ -191,38 +202,91 @@ class AsciiArtGenerator:
                 outfile.write(ascii_char)
             outfile.write("\n")
 
-        if colour_prefix:
+        if colour:
             outfile.write("\x1b[0m")
 
         outfile.close()
 
-    def gen_rubik_output(self, outfile):
+    def gen_lines_output(self, outfile, colour=None):
+        if colour:
+            outfile.write(self.get_colour_prefix(colour))
 
-        height = self.grey.shape[0]
-        width = self.grey.shape[1]
+        self.grey = self.extract_edges()
 
-        line_split, column_split = 0
-        for i in range(height):
-            for j in range(width):
-                pixvalue = self.image[i, j]
-                prefix = self.extract_rubik_colour(
+        for i in range(self.grey.shape[0]):
+            for j in range(self.grey.shape[1]):
+                greyvalue = self.grey[i, j]
+                if greyvalue > 128:
+                    ascii_char = "*"
+                else:
+                    ascii_char = " "
+                outfile.write(ascii_char)
+            outfile.write("\n")
+
+        if colour:
+            outfile.write("\x1b[0m")
+
+        outfile.close()
+
+    def gen_rubik_output(self, outfile):  # TODO: width must be multiple of 3
+        ascii_char = "*"
+
+        line_split = 0
+        column_split = 0
+        print(self.image.shape)
+        for i in range(self.image.shape[0]):
+            for j in range(self.image.shape[1]):
+                pixvalue = np.array(self.image[i, j][0:3])
+                prefix = self.extract_colour(
                     pixvalue
                 )  # TODO: extract colour from pixel
-                ascii_char = "8"
                 outfile.write(prefix + ascii_char + "\x1b[0m")
                 column_split += 1
                 if column_split % 3 == 0:
                     outfile.write("|")
                     column_split = 0
             line_split += 1
-            if line_split % 3 == 0:
-                outfile.write("-" * width)
+            if (line_split % 3) == 0:
+                outfile.write("-" * self.grey.shape[1])
                 line_split = 0
+            outfile.write("\n")
+
+        outfile.close()
+
+    def gen_regular_coloured_output(
+        self, outfile
+    ):  # TODO: determine limit when to insert character and when not
+        ASCII_ARRAY = (
+            "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,^`'."
+        )
+        ASCII_RESOLUTION = round(256 / len(ASCII_ARRAY))
+        for i in range(self.image.shape[0]):
+            for j in range(self.image.shape[1]):
+                pixvalue = np.array(self.image[i, j][0:3])
+                prefix = self.extract_colour(pixvalue)
+                ascii_char = ASCII_ARRAY[-(self.image[i, j][2] // ASCII_RESOLUTION)]
+                outfile.write(prefix + ascii_char + "\x1b[0m")
             outfile.write("\n")
 
         outfile.close()
 
         return 0
 
-    def extract_rubik_colour(self, colour):
-        return 0
+    def extract_colour(self, pixel):  # TODO: tune colours, invert ?
+        #        print(pixel)
+        if pixel[0] < 10:
+            return self.get_colour_prefix("white")
+        elif pixel[0] > 10 and pixel[0] < 40:
+            return self.get_colour_prefix("red")
+        elif pixel[0] > 40 and pixel[0] < 80:
+            return self.get_colour_prefix("green")
+        elif pixel[0] > 80 and pixel[0] < 120:
+            return self.get_colour_prefix("yellow")
+        elif pixel[0] > 120 and pixel[0] < 160:
+            return self.get_colour_prefix("blue")
+        elif pixel[0] > 160 and pixel[0] < 200:
+            return self.get_colour_prefix("magenta")
+        elif pixel[0] > 200 and pixel[0] < 240:
+            return self.get_colour_prefix("cyan")
+        else:
+            return self.get_colour_prefix("black")

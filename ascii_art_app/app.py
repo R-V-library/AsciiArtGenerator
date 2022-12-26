@@ -1,5 +1,4 @@
 import os
-import sys
 import argparse
 
 from .version import __version__
@@ -58,7 +57,7 @@ class App:
             "--output-dir",
             # action="store_true",
             type=str,
-            default="./output.txt",
+            default="./",
             help="Set output file name and directory",
         )
 
@@ -88,7 +87,11 @@ class App:
         )
 
         self.parser.add_argument(
-            "-v", "--version", action="store_true", help="Ascii art generator version"
+            "-v",
+            "--version",
+            action="version",
+            version=("%(prog)s " + __version__),
+            help="Ascii art generator version",
         )
 
         self.parser.add_argument(
@@ -102,10 +105,6 @@ class App:
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-
-        if args.version:
-            print(f"ASCII ART GENERATOR {__version__}")
-            sys.exit(1)
 
         self.do_run(args)
 
@@ -122,5 +121,8 @@ class App:
             generator.trim_whitespace()
 
         generator.resize_image(args.max_lines, args.max_characters)
-
-        generator.generate_output(args.output_dir, args.style, args.colour)
+        if args.output_dir == "./":  # todo, add check to see if valid path
+            outfile = args.output_dir + "output.txt"
+        else:
+            outfile = args.output_dir
+        generator.generate_output(outfile, args.style, args.colour)
