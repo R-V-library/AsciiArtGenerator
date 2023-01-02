@@ -9,3 +9,4 @@ build/*
 .coverage
 htmlcov
 docs/build
+tests/assets/

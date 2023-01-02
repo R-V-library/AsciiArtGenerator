@@ -24,7 +24,6 @@ class App:
         self.parser.add_argument(
             "-c",
             "--colour",
-            # action="store_true",
             default="",
             choices=[
                 "black",
@@ -46,7 +45,6 @@ class App:
         self.parser.add_argument(
             "-l",
             "--max-lines",
-            # action="store_true",
             type=int,
             default="200",
             help="Set max amount of lines",
@@ -55,25 +53,18 @@ class App:
         self.parser.add_argument(
             "-o",
             "--output-dir",
-            # action="store_true",
             type=str,
-            default="./",
+            default=os.environ.get("PRJROOT"),
             help="Set output file name and directory",
         )
 
         self.parser.add_argument(
             "-s",
             "--style",
-            # action="store_true",
             default="regular",
             choices=[
                 "regular",
                 "lines",
-                "regular_coloured",
-                "regular_unicolour",
-                "lines_unicolour",
-                "rubik",
-                "rubik_background",
             ],
             help="Choose output style",
         )
@@ -97,7 +88,6 @@ class App:
         self.parser.add_argument(
             "-w",
             "--max-characters",
-            # action="store_true",
             type=int,
             default="200",
             help="Set max amount of characters per line",
@@ -105,10 +95,9 @@ class App:
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-
+        print(argv)
         self.do_run(args)
 
-    # TODO: define statemachine depending on arguments from parser
     def do_run(self, args):
         generator = AsciiArtGenerator()
 
@@ -121,8 +110,11 @@ class App:
             generator.trim_whitespace()
 
         generator.resize_image(args.max_lines, args.max_characters)
-        if args.output_dir == "./":  # todo, add check to see if valid path
-            outfile = args.output_dir + "output.txt"
+        if args.output_dir == os.environ.get(
+            "PRJROOT"
+        ):  # todo, add check to see if valid path
+            outfile = os.path.join(args.output_dir, "output.txt")
         else:
             outfile = args.output_dir
+
         generator.generate_output(outfile, args.style, args.colour)
