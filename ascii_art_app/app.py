@@ -95,7 +95,6 @@ class App:
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        print(argv)
         self.do_run(args)
 
     def do_run(self, args):
