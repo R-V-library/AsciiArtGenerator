@@ -4,14 +4,9 @@ import os
 
 from ascii_art_app.app import App
 
-# from ascii_art_app.version import __version__
-
-
 logger = logging.getLogger(__name__)
 
 TEST_BASE = os.path.join(os.environ.get("PRJROOT"), "tests", "assets")
-
-# argparser
 
 
 def test_argparser_basic():
@@ -26,7 +21,6 @@ def test_argparser_unknown_argument():  # TODO: check output?
     app = App()
     with pytest.raises(SystemExit):  # as excinfo:
         app.run(["-z"])
-    # assert isinstance(excinfo, Exception)
 
 
 def test_argparser_help():  # TODO: check output using capsys?
@@ -140,28 +134,12 @@ def test_argparser_style():
         app.run([os.path.join(filepath, file), "-s", "lines"])
 
 
-def test_argparser_invalid_style():
-    pass
-
-
-def test_argparser_invalid_style_long():
-    pass
-
-
 def test_argparser_trim_whitespace():
     filepath = os.path.join(TEST_BASE, "valid")
     for file in os.listdir(filepath):
         logger.info(f"Testing file: {file}")
         app = App()
         app.run([os.path.join(filepath, file), "-t"])
-
-
-def test_argparser_max_characters():
-    pass
-
-
-def test_argparser_max_characters_long():
-    pass
 
 
 def test_argparser_invalid_max_characters():
