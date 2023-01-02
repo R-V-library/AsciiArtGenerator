@@ -16,8 +16,11 @@ This CLI program can be used to convert images in popular formats (.jpg, .png, .
 
 ## How it works
 When an image is loaded as a greyscale image, the RGB pixel values are converted into one 8-bit number (value: 0-255).
-This 8-bit number is subsequently mapped onto an array of ascii characters.
+This 8-bit number is subsequently mapped onto an array of ascii characters. <br>
 An example of ascii char mapping: [example ascii char mapping](http://mewbies.com/geek_fun_files/ascii/ascii_art_light_scale_and_gray_scale_chart.htm)
+
+Additionally an output colour can be specified. This functionality uses the ascii escape codes to colour the output when viewed in a terminal. <br>
+[Info about terminal colours](https://chrisyeh96.github.io/2020/03/28/terminal-colors.html)
 
 ## Dependencies
 This program uses the opencv library for image processing.
